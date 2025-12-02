@@ -487,6 +487,8 @@ model_deployments:
     max_sequence_length: 300000
     client_spec:
       class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+      args:
+        bedrock_model_id: us.amazon.nova-pro-v1:0
 
   - name: amazon/nova-lite-v1:0
     model_name: amazon/nova-lite-v1:0
@@ -739,6 +741,13 @@ model_deployments:
 
   - name: anthropic/claude-haiku-4-5-20251001
     model_name: anthropic/claude-haiku-4-5-20251001
+    tokenizer_name: anthropic/claude
+    max_sequence_length: 200000
+    client_spec:
+      class_name: "helm.clients.anthropic_client.AnthropicMessagesClient"
+
+  - name: anthropic/claude-opus-4-5-20251124
+    model_name: anthropic/claude-opus-4-5-20251124
     tokenizer_name: anthropic/claude
     max_sequence_length: 200000
     client_spec:
