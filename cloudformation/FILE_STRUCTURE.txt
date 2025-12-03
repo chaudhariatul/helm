@@ -1,0 +1,291 @@
+================================================================================
+MedHELM SageMaker Workshop - File Structure
+================================================================================
+
+cloudformation/
+│
+├── 📄 sagemaker-medhelm-domain.yaml       [16 KB] ⭐ Main CloudFormation Template
+│   └── Provisions: SageMaker Domain, User Profile, IAM Role, Security Group,
+│       Lifecycle Configuration with automated setup
+│
+├── 📚 Documentation
+│   ├── README.md                          [5.3 KB] Quick Start Guide
+│   ├── DEPLOYMENT_GUIDE.md                [15 KB]  Comprehensive Deployment Guide
+│   ├── OVERVIEW.md                        [16 KB]  Architectural Overview
+│   ├── SUMMARY.txt                        [7.6 KB] Package Summary
+│   ├── CHECKLIST.md                       [~10 KB] Deployment Checklist
+│   └── FILE_STRUCTURE.txt                 [This file]
+│
+├── 📓 Workshop Notebooks
+│   ├── workshop-notebook-1-introduction.ipynb         [8.1 KB]
+│   │   └── Environment verification, MedHELM introduction, AWS setup check
+│   │
+│   ├── workshop-notebook-2-tiny-evaluation.ipynb      [12 KB]
+│   │   └── First evaluation (10 instances), PubMedQA scenario, results analysis
+│   │
+│   ├── workshop-notebook-3-scenarios.ipynb            [12 KB]
+│   │   └── MedHELM taxonomy, available scenarios, multi-scenario evaluation
+│   │
+│   └── workshop-notebook-4-custom-benchmarks.ipynb    [16 KB]
+│       └── Custom prompts, datasets, YAML configs, LLM-as-judge
+│
+└── 🛠️  Helper Scripts
+    ├── upload-notebooks.sh                [2.0 KB] Upload notebooks to S3
+    └── validate-template.sh               [2.2 KB] Validate CloudFormation template
+
+================================================================================
+What Gets Deployed (In AWS)
+================================================================================
+
+AWS CloudFormation Stack
+│
+├── SageMaker Domain
+│   ├── Domain Name: medhelm-workshop-domain (configurable)
+│   ├── Auth Mode: IAM
+│   ├── Network: VPC-only mode
+│   └── Default Settings: Code Editor with lifecycle config
+│
+├── User Profile
+│   ├── Name: medhelm-user (configurable)
+│   └── Linked to: Code Editor lifecycle configuration
+│
+├── IAM Execution Role
+│   ├── SageMaker Full Access
+│   ├── S3 Full Access
+│   ├── ECR Read Access
+│   └── CloudWatch Logs
+│
+├── Security Group
+│   ├── VPC-attached
+│   ├── Self-referencing ingress (NFS)
+│   └── All outbound traffic allowed
+│
+└── Lifecycle Configuration
+    ├── Installs: uv, pip, boto3, sagemaker, crfm-helm[summarization,medhelm]
+    ├── Installs: Google Cloud SDK (gcloud)
+    ├── Clones: HELM repository
+    ├── Creates: Virtual environment, directories, helper scripts
+    └── Configures: Environment variables, PATH
+
+================================================================================
+Environment Structure (In Code Editor)
+================================================================================
+
+/home/sagemaker-user/
+│
+├── 📁 helm/                              [Cloned from GitHub]
+│   ├── src/helm/benchmark/scenarios/     [MedHELM scenarios]
+│   ├── src/helm/benchmark/metrics/       [Evaluation metrics]
+│   ├── docs/medhelm.md                   [MedHELM documentation]
+│   └── ...
+│
+├── 📁 benchmark_output/                  [Evaluation results]
+│   ├── runs/                             [Run outputs by suite]
+│   │   └── {suite_name}/
+│   │       └── {scenario}/
+│   │           ├── scenario_state.json
+│   │           ├── stats.json
+│   │           └── ...
+│   └── releases/                         [Leaderboard releases]
+│
+├── 📁 workshop-notebooks/                [Workshop materials]
+│   ├── workshop-notebook-1-introduction.ipynb
+│   ├── workshop-notebook-2-tiny-evaluation.ipynb
+│   ├── workshop-notebook-3-scenarios.ipynb
+│   └── workshop-notebook-4-custom-benchmarks.ipynb
+│
+├── 📁 medhelm-env/                       [Python 3.10 virtual environment]
+│   ├── bin/
+│   │   ├── python -> python3.10
+│   │   ├── pip
+│   │   ├── helm-run
+│   │   ├── helm-summarize
+│   │   └── helm-server
+│   ├── lib/python3.10/site-packages/
+│   └── ...
+│
+├── 📁 .cargo/bin/                        [uv package manager]
+│   └── uv
+│
+├── 📄 verify_setup.sh                    [Setup verification script]
+├── 📄 README_MEDHELM.md                  [Environment documentation]
+└── 📄 .bashrc                            [Shell configuration]
+
+================================================================================
+CloudFormation Template Structure
+================================================================================
+
+sagemaker-medhelm-domain.yaml
+│
+├── AWSTemplateFormatVersion: 2010-09-09
+│
+├── Description
+│   └── "SageMaker AI Domain with Code Editor for MedHELM Workshop"
+│
+├── Parameters (5)
+│   ├── DomainName              [String, default: medhelm-workshop-domain]
+│   ├── UserProfileName         [String, default: medhelm-user]
+│   ├── VpcId                   [AWS::EC2::VPC::Id, required]
+│   ├── SubnetIds               [List<AWS::EC2::Subnet::Id>, required]
+│   └── CodeEditorInstanceType  [String, default: ml.t3.medium]
+│
+├── Metadata
+│   └── AWS::CloudFormation::Interface
+│       └── Parameter grouping and labels
+│
+├── Resources (7)
+│   ├── SageMakerExecutionRole          [AWS::IAM::Role]
+│   ├── SageMakerSecurityGroup          [AWS::EC2::SecurityGroup]
+│   ├── SageMakerSecurityGroupIngress   [AWS::EC2::SecurityGroupIngress]
+│   ├── CodeEditorLifecycleConfig       [AWS::SageMaker::StudioLifecycleConfig]
+│   ├── SageMakerDomain                 [AWS::SageMaker::Domain]
+│   └── UserProfile                     [AWS::SageMaker::UserProfile]
+│
+└── Outputs (6)
+    ├── DomainId                [SageMaker Domain ID]
+    ├── DomainArn               [SageMaker Domain ARN]
+    ├── UserProfileArn          [User Profile ARN]
+    ├── ExecutionRoleArn        [IAM Role ARN]
+    ├── SecurityGroupId         [Security Group ID]
+    └── ConsoleUrl              [Direct link to SageMaker Console]
+
+================================================================================
+Lifecycle Configuration Flow
+================================================================================
+
+1. Code Editor Launch Triggered
+   ↓
+2. Lifecycle Script Starts (/var/log/lifecycle-config.log)
+   ↓
+3. Install System Dependencies
+   ├── curl, wget
+   └── Python 3.10 (if not present)
+   ↓
+4. Install uv Package Manager
+   └── curl -LsSf https://astral.sh/uv/install.sh | sh
+   ↓
+5. Create Python 3.10 Virtual Environment
+   └── python3.10 -m venv ~/medhelm-env
+   ↓
+6. Install Python Packages
+   ├── pip install --upgrade pip setuptools wheel
+   ├── pip install --upgrade boto3 sagemaker
+   ├── pip install --upgrade "crfm-helm[summarization,medhelm]"
+   └── pip install jupyter notebook pandas matplotlib
+   ↓
+7. Install Google Cloud SDK
+   └── Download, extract, install to /root/google-cloud-sdk
+   ↓
+8. Clone HELM Repository
+   └── git clone https://github.com/stanford-crfm/helm.git ~/helm/
+   ↓
+9. Create Directory Structure
+   ├── mkdir ~/benchmark_output
+   └── mkdir ~/workshop-notebooks
+   ↓
+10. Download Benchmark Data (Optional)
+    └── gcloud storage rsync gs://crfm-helm-public/medhelm/benchmark_output ~/benchmark_output/
+    ↓
+11. Create Helper Scripts
+    ├── ~/verify_setup.sh
+    └── ~/README_MEDHELM.md
+    ↓
+12. Set Permissions
+    └── chown -R sagemaker-user:sagemaker-user ~
+    ↓
+13. Lifecycle Script Complete ✓
+    └── Code Editor Ready for Use!
+
+================================================================================
+Workshop Flow Diagram
+================================================================================
+
+Workshop Participant
+│
+├─ Step 1: Access Environment
+│  └─ SageMaker Console → Domain → User → Launch Code Editor
+│
+├─ Step 2: Verify Setup
+│  └─ Run: ./verify_setup.sh
+│
+├─ Step 3: Upload Notebooks
+│  └─ Upload 4 workshop notebooks to ~/workshop-notebooks/
+│
+├─ Step 4: Notebook 1 - Introduction
+│  ├─ Verify installation
+│  ├─ Understand MedHELM
+│  └─ Check AWS configuration
+│
+├─ Step 5: Notebook 2 - Tiny Evaluation
+│  ├─ Run first evaluation (10 instances)
+│  ├─ Examine outputs
+│  └─ Create leaderboard
+│
+├─ Step 6: Notebook 3 - Scenarios
+│  ├─ Explore MedHELM taxonomy
+│  ├─ Run multiple scenarios
+│  └─ Compare results
+│
+├─ Step 7: Notebook 4 - Custom Benchmarks
+│  ├─ Create prompt templates
+│  ├─ Build datasets
+│  ├─ Configure YAML
+│  └─ Run custom evaluation
+│
+└─ Step 8: Continue Learning
+   ├─ Full evaluations
+   ├─ Model comparisons
+   └─ Production deployment
+
+================================================================================
+Package Summary
+================================================================================
+
+Total Files: 12
+Total Size: ~128 KB
+
+Documentation: 5 files (~54 KB)
+  - Comprehensive guides for deployment, usage, and troubleshooting
+
+Notebooks: 4 files (~48 KB)
+  - Interactive tutorials from setup to custom benchmarks
+
+Scripts: 2 files (~4 KB)
+  - Helpers for validation and notebook upload
+
+Template: 1 file (~16 KB)
+  - Production-ready CloudFormation template
+
+Support: This file
+  - Visual guide to package structure
+
+================================================================================
+Quick Reference
+================================================================================
+
+📖 Start Here:
+   └─ README.md
+
+🚀 Deploy:
+   └─ Upload sagemaker-medhelm-domain.yaml to CloudFormation
+
+📋 Follow Along:
+   └─ CHECKLIST.md
+
+🎓 Learn:
+   └─ Workshop notebooks 1-4
+
+❓ Need Help:
+   └─ DEPLOYMENT_GUIDE.md → Troubleshooting section
+
+================================================================================
+
+For questions or issues, see:
+- DEPLOYMENT_GUIDE.md (troubleshooting)
+- https://github.com/stanford-crfm/helm (MedHELM/HELM issues)
+- AWS Support Center (infrastructure issues)
+
+Version: 1.0.0
+Last Updated: December 2024
+
+================================================================================

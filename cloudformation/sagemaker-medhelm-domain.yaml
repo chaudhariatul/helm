@@ -1,0 +1,444 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'SageMaker AI Domain with Code Editor for MedHELM Workshop - Production Ready'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: medhelm-workshop-domain
+    Description: Name of the SageMaker Domain
+    AllowedPattern: ^[a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}
+    ConstraintDescription: Must be a valid domain name
+  
+  UserProfileName:
+    Type: String
+    Default: medhelm-user
+    Description: Name of the default user profile
+    AllowedPattern: ^[a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}
+    ConstraintDescription: Must be a valid user profile name
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for SageMaker Domain (must have internet access)
+  
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs for SageMaker Domain (at least one, preferably private with NAT)
+  
+  CodeEditorInstanceType:
+    Type: String
+    Default: ml.t3.medium
+    Description: Instance type for Code Editor
+    AllowedValues:
+      - ml.t3.medium
+      - ml.t3.large
+      - ml.t3.xlarge
+      - ml.m5.large
+      - ml.m5.xlarge
+      - ml.m5.2xlarge
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Domain Configuration
+        Parameters:
+          - DomainName
+          - UserProfileName
+      - Label:
+          default: Network Configuration
+        Parameters:
+          - VpcId
+          - SubnetIds
+      - Label:
+          default: Compute Configuration
+        Parameters:
+          - CodeEditorInstanceType
+
+Resources:
+  # IAM Role for SageMaker Execution
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${DomainName}-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: AdditionalSageMakerPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::sagemaker-${AWS::Region}-${AWS::AccountId}/*'
+                  - !Sub 'arn:aws:s3:::sagemaker-${AWS::Region}-${AWS::AccountId}'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+      Tags:
+        - Key: Project
+          Value: MedHELM
+        - Key: Environment
+          Value: Workshop
+
+  # Security Group for SageMaker Domain
+  SageMakerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${DomainName}-sg'
+      GroupDescription: Security group for SageMaker Domain
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub '${DomainName}-sg'
+        - Key: Project
+          Value: MedHELM
+
+  # Self-referencing ingress rule for NFS
+  SageMakerSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref SageMakerSecurityGroup
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref SageMakerSecurityGroup
+      Description: Allow all traffic within security group for EFS
+
+  # Lifecycle Configuration for Code Editor
+  CodeEditorLifecycleConfig:
+    Type: AWS::SageMaker::StudioLifecycleConfig
+    Properties:
+      StudioLifecycleConfigName: !Sub '${DomainName}-code-editor-lcc'
+      StudioLifecycleConfigAppType: CodeEditor
+      StudioLifecycleConfigContent:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eux
+          
+          # Log file for debugging
+          LOG_FILE="/var/log/lifecycle-config.log"
+          exec > >(tee -a $LOG_FILE) 2>&1
+          
+          echo "Starting lifecycle configuration at $(date)"
+          
+          # Get the home directory
+          HOME_DIR="/home/sagemaker-user"
+          cd $HOME_DIR
+          
+          # Function to log with timestamp
+          log() {
+              echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+          }
+          
+          log "Installing system dependencies..."
+          
+          # Install uv package manager
+          log "Installing uv package manager..."
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME_DIR/.cargo/bin:$PATH"
+          
+          # Verify uv installation
+          if command -v uv &> /dev/null; then
+              log "uv installed successfully: $(uv --version)"
+          else
+              log "ERROR: uv installation failed"
+              exit 1
+          fi
+          
+          # Ensure Python 3.10 is available
+          log "Setting up Python 3.10..."
+          if ! command -v python3.10 &> /dev/null; then
+              log "Installing Python 3.10..."
+              sudo yum install -y python3.10 python3.10-devel
+          fi
+          
+          # Create virtual environment with Python 3.10
+          log "Creating Python 3.10 virtual environment..."
+          python3.10 -m venv $HOME_DIR/medhelm-env
+          source $HOME_DIR/medhelm-env/bin/activate
+          
+          # Upgrade pip
+          log "Upgrading pip..."
+          pip install --upgrade pip setuptools wheel
+          
+          # Install core Python packages
+          log "Installing boto3..."
+          pip install --upgrade boto3
+          
+          log "Installing sagemaker..."
+          pip install --upgrade sagemaker
+          
+          # Install crfm-helm with MedHELM dependencies
+          log "Installing crfm-helm[summarization,medhelm]..."
+          pip install --upgrade "crfm-helm[summarization,medhelm]"
+          
+          # Install additional useful packages for workshops
+          log "Installing additional workshop packages..."
+          pip install --upgrade jupyter notebook ipywidgets matplotlib seaborn pandas
+          
+          # Install Google Cloud SDK
+          log "Installing Google Cloud SDK..."
+          cd /tmp
+          curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-latest-linux-x86_64.tar.gz
+          tar -xf google-cloud-cli-latest-linux-x86_64.tar.gz
+          sudo ./google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=true --command-completion=true
+          
+          # Add gcloud to PATH
+          export PATH="/root/google-cloud-sdk/bin:$PATH"
+          
+          # Configure gcloud to not require authentication for public buckets
+          gcloud config set auth/disable_credentials true 2>/dev/null || true
+          
+          # Verify gcloud installation
+          if command -v gcloud &> /dev/null; then
+              log "gcloud installed successfully: $(gcloud --version | head -1)"
+          else
+              log "ERROR: gcloud installation failed"
+          fi
+          
+          # Clone HELM repository
+          log "Cloning HELM repository..."
+          cd $HOME_DIR
+          if [ ! -d "helm" ]; then
+              git clone https://github.com/stanford-crfm/helm.git
+              log "HELM repository cloned successfully"
+          else
+              log "HELM repository already exists, pulling latest changes..."
+              cd helm
+              git pull
+              cd ..
+          fi
+          
+          # Create benchmark output directory
+          log "Creating benchmark output directory..."
+          mkdir -p $HOME_DIR/benchmark_output
+          
+          # Download benchmark outputs from Google Cloud Storage
+          log "Downloading MedHELM benchmark outputs..."
+          export GCS_BENCHMARK_OUTPUT_PATH="gs://crfm-helm-public/medhelm/benchmark_output"
+          
+          # Try to download with gcloud (public bucket, no auth required)
+          log "Attempting to download from $GCS_BENCHMARK_OUTPUT_PATH..."
+          if command -v gsutil &> /dev/null; then
+              gsutil -m rsync -r $GCS_BENCHMARK_OUTPUT_PATH $HOME_DIR/benchmark_output/ || \
+                  log "WARNING: Could not download benchmark outputs. You may need to run 'gcloud auth login' first."
+          else
+              log "WARNING: gsutil not available. Install gcloud SDK components manually if needed."
+          fi
+          
+          # Create workshop notebooks directory
+          log "Creating workshop notebooks directory..."
+          mkdir -p $HOME_DIR/workshop-notebooks
+          
+          # Create setup verification script
+          cat > $HOME_DIR/verify_setup.sh << 'VERIFY_EOF'
+          #!/bin/bash
+          echo "=== MedHELM Setup Verification ==="
+          echo ""
+          echo "Python version:"
+          python --version
+          echo ""
+          echo "Installed packages:"
+          pip list | grep -E "crfm-helm|boto3|sagemaker"
+          echo ""
+          echo "gcloud version:"
+          gcloud --version 2>/dev/null || echo "gcloud not found in PATH"
+          echo ""
+          echo "uv version:"
+          uv --version 2>/dev/null || echo "uv not found in PATH"
+          echo ""
+          echo "HELM repository:"
+          [ -d "$HOME/helm" ] && echo "✓ HELM repository exists" || echo "✗ HELM repository not found"
+          echo ""
+          echo "Benchmark output:"
+          [ -d "$HOME/benchmark_output" ] && echo "✓ benchmark_output directory exists" || echo "✗ benchmark_output not found"
+          echo ""
+          echo "Workshop notebooks:"
+          [ -d "$HOME/workshop-notebooks" ] && echo "✓ workshop-notebooks directory exists" || echo "✗ workshop-notebooks not found"
+          VERIFY_EOF
+          
+          chmod +x $HOME_DIR/verify_setup.sh
+          
+          # Create a welcome README
+          cat > $HOME_DIR/README_MEDHELM.md << 'README_EOF'
+          # MedHELM Workshop Environment
+          
+          Welcome to your MedHELM workshop environment! This SageMaker Code Editor has been pre-configured with:
+          
+          ## Installed Tools and Packages
+          
+          - **Python 3.10** - Required for MedHELM compatibility
+          - **uv package manager** - Modern Python package installer
+          - **pip** (upgraded) - Python package manager
+          - **boto3** (latest) - AWS SDK for Python
+          - **sagemaker** (latest) - SageMaker Python SDK
+          - **crfm-helm[summarization,medhelm]** - HELM framework with MedHELM extensions
+          - **Google Cloud SDK** - For accessing public benchmark data
+          
+          ## Directory Structure
+          
+          - `~/helm/` - Cloned HELM repository from GitHub
+          - `~/benchmark_output/` - Directory for benchmark outputs
+          - `~/workshop-notebooks/` - Jupyter notebooks for the workshop
+          
+          ## Getting Started
+          
+          1. Verify your setup:
+             ```bash
+             ./verify_setup.sh
+             ```
+          
+          2. Activate the Python environment:
+             ```bash
+             source ~/medhelm-env/bin/activate
+             ```
+          
+          3. Run a tiny evaluation (from MedHELM quickstart):
+             ```bash
+             export OUTPUT_PATH="./benchmark_output"
+             export RUN_ENTRIES="pubmed_qa:model=qwen/qwen2.5-7b-instruct,model_deployment=huggingface/qwen2.5-7b-instruct"
+             export SUITE="my-medhelm-suite"
+             export MAX_EVAL_INSTANCES=10
+             
+             helm-run \
+                --run-entries $RUN_ENTRIES \
+                --suite $SUITE \
+                --max-eval-instances $MAX_EVAL_INSTANCES \
+                --output-path $OUTPUT_PATH
+             ```
+          
+          4. Explore the workshop notebooks in `~/workshop-notebooks/`
+          
+          ## Resources
+          
+          - [MedHELM Documentation](https://crfm.stanford.edu/helm/medhelm/latest/)
+          - [HELM GitHub Repository](https://github.com/stanford-crfm/helm)
+          - [MedHELM Paper](https://arxiv.org/abs/2505.23802)
+          
+          ## Troubleshooting
+          
+          If you encounter issues:
+          1. Check the lifecycle configuration log: `cat /var/log/lifecycle-config.log`
+          2. Verify all packages are installed: `pip list`
+          3. Ensure you're using Python 3.10: `python --version`
+          
+          For downloading benchmark outputs, you may need to authenticate with Google Cloud:
+          ```bash
+          gcloud auth login
+          ```
+          README_EOF
+          
+          # Set proper ownership
+          chown -R sagemaker-user:sagemaker-user $HOME_DIR
+          
+          log "Lifecycle configuration completed successfully at $(date)"
+          exit 0
+      Tags:
+        - Key: Project
+          Value: MedHELM
+        - Key: Environment
+          Value: Workshop
+
+  # SageMaker Domain
+  SageMakerDomain:
+    Type: AWS::SageMaker::Domain
+    Properties:
+      DomainName: !Ref DomainName
+      AuthMode: IAM
+      DefaultUserSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+        SecurityGroups:
+          - !Ref SageMakerSecurityGroup
+        CodeEditorAppSettings:
+          DefaultResourceSpec:
+            InstanceType: !Ref CodeEditorInstanceType
+            LifecycleConfigArn: !GetAtt CodeEditorLifecycleConfig.StudioLifecycleConfigArn
+      SubnetIds: !Ref SubnetIds
+      VpcId: !Ref VpcId
+      AppNetworkAccessType: VpcOnly
+      Tags:
+        - Key: Project
+          Value: MedHELM
+        - Key: Environment
+          Value: Workshop
+
+  # User Profile
+  UserProfile:
+    Type: AWS::SageMaker::UserProfile
+    Properties:
+      DomainId: !Ref SageMakerDomain
+      UserProfileName: !Ref UserProfileName
+      UserSettings:
+        ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
+        SecurityGroups:
+          - !Ref SageMakerSecurityGroup
+        CodeEditorAppSettings:
+          DefaultResourceSpec:
+            InstanceType: !Ref CodeEditorInstanceType
+            LifecycleConfigArn: !GetAtt CodeEditorLifecycleConfig.StudioLifecycleConfigArn
+      Tags:
+        - Key: Project
+          Value: MedHELM
+        - Key: Environment
+          Value: Workshop
+
+Outputs:
+  DomainId:
+    Description: SageMaker Domain ID
+    Value: !Ref SageMakerDomain
+    Export:
+      Name: !Sub '${AWS::StackName}-DomainId'
+  
+  DomainArn:
+    Description: SageMaker Domain ARN
+    Value: !GetAtt SageMakerDomain.DomainArn
+    Export:
+      Name: !Sub '${AWS::StackName}-DomainArn'
+  
+  UserProfileArn:
+    Description: User Profile ARN
+    Value: !GetAtt UserProfile.UserProfileArn
+    Export:
+      Name: !Sub '${AWS::StackName}-UserProfileArn'
+  
+  ExecutionRoleArn:
+    Description: SageMaker Execution Role ARN
+    Value: !GetAtt SageMakerExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ExecutionRoleArn'
+  
+  SecurityGroupId:
+    Description: Security Group ID
+    Value: !Ref SageMakerSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
+  
+  ConsoleUrl:
+    Description: URL to access SageMaker Domain in AWS Console
+    Value: !Sub 'https://console.aws.amazon.com/sagemaker/home?region=${AWS::Region}#/studio/${SageMakerDomain}'
