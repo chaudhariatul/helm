@@ -17,6 +17,48 @@ from helm.tokenizers.tokenizer import Tokenizer
 JSON_CONTENT_TYPE = "application/json"
 
 
+def convert_to_bedrock_model_id(model_name: str) -> str:
+    """
+    Convert Helm's slash-based model names to Bedrock's dot-based format.
+    
+    Maps organization names from Helm convention to Bedrock provider names:
+    - mistralai/ -> mistral.
+    - amazon/ -> amazon.
+    - google/ -> google.
+    - nvidia/ -> nvidia.
+    - qwen/ -> qwen.
+    - moonshot/ -> moonshot.
+    - meta/ -> meta.
+    - writer/ -> writer.
+    
+    Args:
+        model_name: Model name in Helm format (e.g., "mistralai/magistral-small-2509")
+    
+    Returns:
+        Model ID in Bedrock format (e.g., "mistral.magistral-small-2509")
+    """
+    # Mapping from Helm organization names to Bedrock provider names
+    org_to_provider = {
+        "mistralai": "mistral",
+        "amazon": "amazon",
+        "google": "google",
+        "nvidia": "nvidia",
+        "qwen": "qwen",
+        "moonshot": "moonshot",
+        "meta": "meta",
+        "writer": "writer",
+    }
+    
+    # Split on "/" to get organization and model parts
+    if "/" in model_name:
+        org, model = model_name.split("/", 1)
+        provider = org_to_provider.get(org, org)  # Use mapping or fallback to org name
+        return f"{provider}.{model}"
+    else:
+        # If no "/" found, just replace any "/" with "." as fallback
+        return model_name.replace("/", ".")
+
+
 class BedrockClient(CachingClient):
     @abstractmethod
     def convert_request_to_raw_request(self, request: Request) -> Dict:
@@ -58,13 +100,8 @@ class BedrockClient(CachingClient):
         if self.bedrock_model_id:
             model_id = self.bedrock_model_id
         else:
-            # model_id should be something like "amazon.titan-tg1-large", replace amazon- prefix with model creator name
-            model_name = request.model.split("/")[-1]
-            # check if model_name starts with "amazon-"
-            if self.model_provider == "amazon":
-                model_id = f"{self.model_provider}.{model_name}"
-            else:
-                model_id = model_name.replace("amazon-", f"{self.model_provider}.")
+            # Convert Helm's slash-based model name to Bedrock's dot-based format
+            model_id = convert_to_bedrock_model_id(request.model)
 
         raw_request = self.convert_request_to_raw_request(request)
 
@@ -150,7 +187,8 @@ class BedrockNovaClient(CachingClient):
             return [{"role": "user", "content": [{"text": request.prompt}]}]
 
     def convert_request_to_raw_request(self, request: Request) -> Dict:
-        model_id = request.model.replace("/", ".")
+        # Convert Helm's slash-based model name to Bedrock's dot-based format
+        model_id = convert_to_bedrock_model_id(request.model)
         messages = self._get_messages_from_request(request)
 
         return {
