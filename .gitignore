@@ -1,6 +1,7 @@
 # General Python stuff
 venv
 __pycache__
+*.pyc
 *.egg-info
 .mypy_cache
 pip-wheel-metadata/

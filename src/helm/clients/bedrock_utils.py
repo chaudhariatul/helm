@@ -31,11 +31,12 @@ def get_bedrock_client(
     region :
         Optional name of the AWS Region in which the service should be called (e.g. "us-east-1").
         If not specified, AWS_REGION or AWS_DEFAULT_REGION environment variable will be used.
+        Defaults to us-east-1 if no environment variables are set.
     runtime :
         Optional choice of getting different client to perform operations with the Amazon Bedrock service.
     """
     if region is None:
-        target_region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
+        target_region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
     else:
         target_region = region
 
@@ -81,12 +82,39 @@ def get_bedrock_client_v1(
     connect_timeout: int = 5000,
     max_attempts: int = 10,
 ):
+    """Create a boto3 client for Amazon Bedrock using v1 API
+    
+    Parameters
+    ----------
+    region :
+        Optional name of the AWS Region in which the service should be called (e.g. "us-east-1").
+        If not specified, AWS_REGION or AWS_DEFAULT_REGION environment variable will be used.
+        Defaults to us-east-1 if no environment variables are set.
+    service_name :
+        The AWS service name (default: "bedrock-runtime")
+    assumed_role :
+        Optional ARN of an AWS IAM role to assume for calling the Bedrock service.
+    read_timeout :
+        Read timeout in seconds (default: 5000)
+    connect_timeout :
+        Connection timeout in seconds (default: 5000)
+    max_attempts :
+        Maximum number of retry attempts (default: 10)
+    """
+    if region is None:
+        region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+    
     boto_config = Config(
         read_timeout=read_timeout, connect_timeout=connect_timeout, retries={"max_attempts": max_attempts}
     )
 
+    profile_name = os.environ.get("AWS_PROFILE")
+    session_kwargs = {"region_name": region}
+    if profile_name:
+        session_kwargs["profile_name"] = profile_name
+
     if assumed_role:
-        session = boto3.Session(region_name=region)
+        session = boto3.Session(**session_kwargs)
         # Assume role and get credentials
         sts = session.client("sts")
         creds = sts.assume_role(RoleArn=str(assumed_role), RoleSessionName="crfm-helm")["Credentials"]
@@ -94,12 +122,14 @@ def get_bedrock_client_v1(
             aws_access_key_id=creds["AccessKeyId"],
             aws_secret_access_key=creds["SecretAccessKey"],
             aws_session_token=creds["SessionToken"],
+            region_name=region,
         )
         return session.client(
             service_name=service_name,
-            region_name=region,
             config=boto_config,
         )
 
     # default to instance role to get the aws credentials or aws configured credentials
-    return boto3.client(service_name=service_name, region_name=region, config=boto_config)
+    # If AWS_PROFILE is set, boto3.Session will use it
+    session = boto3.Session(**session_kwargs)
+    return session.client(service_name=service_name, config=boto_config)
