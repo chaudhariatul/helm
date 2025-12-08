@@ -17,6 +17,48 @@ from helm.tokenizers.tokenizer import Tokenizer
 JSON_CONTENT_TYPE = "application/json"
 
 
+# Mapping of model IDs to their AWS Bedrock inference profile IDs
+# Models that require inference profiles for on-demand throughput invocation
+MODEL_TO_INFERENCE_PROFILE = {
+    # Amazon Nova models
+    "amazon.nova-2-pro-v1:0": "us.amazon.nova-2-pro-v1:0",
+    "amazon.nova-2-lite-v1:0": "us.amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-sonic-v1:0": "us.amazon.nova-2-sonic-v1:0",
+    # Amazon Titan models
+    "amazon.titan-text-lite-v1": "us.amazon.titan-text-lite-v1",
+    "amazon.titan-text-express-v1": "us.amazon.titan-text-express-v1",
+    # Mistral models via Amazon Bedrock
+    "mistral.mistral-7b-instruct-v0:2": "us.mistral.mistral-7b-instruct-v0:2",
+    "mistral.mixtral-8x7b-instruct-v0:1": "us.mistral.mixtral-8x7b-instruct-v0:1",
+    "mistral.mistral-large-2402-v1:0": "us.mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-small-2402-v1:0": "us.mistral.mistral-small-2402-v1:0",
+    "mistral.mistral-large-2407-v1:0": "us.mistral.mistral-large-2407-v1:0",
+    "mistral.magistral-small-2509": "us.mistral.magistral-small-2509",
+    "mistral.ministral-3-14b-instruct": "us.mistral.ministral-3-14b-instruct",
+    "mistral.ministral-3-8b-instruct": "us.mistral.ministral-3-8b-instruct",
+    "mistral.mistral-large-3-675b-instruct": "us.mistral.mistral-large-3-675b-instruct",
+    # Meta Llama models
+    "meta.llama3-8b-instruct-v1:0": "us.meta.llama3-8b-instruct-v1:0",
+    "meta.llama3-70b-instruct-v1:0": "us.meta.llama3-70b-instruct-v1:0",
+    "meta.llama3-1-405b-instruct-v1:0": "us.meta.llama3-1-405b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0": "us.meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0": "us.meta.llama3-1-8b-instruct-v1:0",
+    # Qwen models
+    "qwen.qwen3-next-80b-a3b": "us.qwen.qwen3-next-80b-a3b",
+    # Google Gemma models
+    "google.gemma-3-4b-it": "us.google.gemma-3-4b-it",
+    "google.gemma-3-12b-it": "us.google.gemma-3-12b-it",
+    "google.gemma-3-27b-it": "us.google.gemma-3-27b-it",
+    # Moonshot Kimi models
+    "moonshot.kimi-k2-thinking": "us.moonshot.kimi-k2-thinking",
+    # NVIDIA Nemotron models
+    "nvidia.nemotron-nano-9b-v2": "us.nvidia.nemotron-nano-9b-v2",
+    "nvidia.nemotron-nano-12b-v2": "us.nvidia.nemotron-nano-12b-v2",
+    # Writer Palmyra models
+    "writer.palmyra-x5-v1-bedrock": "us.writer.palmyra-x5-v1-bedrock",
+}
+
+
 def convert_to_bedrock_model_id(model_name: str) -> str:
     """
     Convert Helm's slash-based model names to Bedrock's dot-based format.
@@ -31,11 +73,14 @@ def convert_to_bedrock_model_id(model_name: str) -> str:
     - meta/ -> meta.
     - writer/ -> writer.
     
+    Also removes the "amazon-" prefix from model names when present, as AWS Bedrock
+    doesn't recognize this internal HELM identifier prefix.
+    
     Args:
-        model_name: Model name in Helm format (e.g., "mistralai/magistral-small-2509")
+        model_name: Model name in Helm format (e.g., "mistralai/amazon-mistral-7b-instruct-v0:2")
     
     Returns:
-        Model ID in Bedrock format (e.g., "mistral.magistral-small-2509")
+        Model ID in Bedrock format (e.g., "mistral.mistral-7b-instruct-v0:2")
     """
     # Mapping from Helm organization names to Bedrock provider names
     org_to_provider = {
@@ -53,10 +98,34 @@ def convert_to_bedrock_model_id(model_name: str) -> str:
     if "/" in model_name:
         org, model = model_name.split("/", 1)
         provider = org_to_provider.get(org, org)  # Use mapping or fallback to org name
+        
+        # Strip "amazon-" prefix from model name if present
+        # This prefix is used internally by HELM to distinguish Bedrock-hosted models
+        # but AWS Bedrock doesn't recognize it in model IDs
+        if model.startswith("amazon-"):
+            model = model[7:]  # Remove "amazon-" prefix (7 characters)
+        
         return f"{provider}.{model}"
     else:
         # If no "/" found, just replace any "/" with "." as fallback
         return model_name.replace("/", ".")
+
+
+def get_inference_profile_id(model_id: str) -> str:
+    """
+    Get the AWS Bedrock inference profile ID for a given model ID.
+    
+    Some models require inference profile IDs for on-demand throughput invocation.
+    This function maps standard model IDs to their corresponding inference profile IDs.
+    
+    Args:
+        model_id: Model ID in Bedrock format (e.g., "amazon.nova-2-lite-v1:0")
+    
+    Returns:
+        Inference profile ID if available (e.g., "us.amazon.nova-2-lite-v1:0"),
+        otherwise returns the original model_id unchanged.
+    """
+    return MODEL_TO_INFERENCE_PROFILE.get(model_id, model_id)
 
 
 class BedrockClient(CachingClient):
@@ -102,6 +171,10 @@ class BedrockClient(CachingClient):
         else:
             # Convert Helm's slash-based model name to Bedrock's dot-based format
             model_id = convert_to_bedrock_model_id(request.model)
+        
+        # Use inference profile ID if available for on-demand throughput
+        # This applies even if bedrock_model_id was explicitly provided
+        model_id = get_inference_profile_id(model_id)
 
         raw_request = self.convert_request_to_raw_request(request)
 
@@ -189,10 +262,18 @@ class BedrockNovaClient(CachingClient):
     def convert_request_to_raw_request(self, request: Request) -> Dict:
         # Convert Helm's slash-based model name to Bedrock's dot-based format
         model_id = convert_to_bedrock_model_id(request.model)
+        
+        # Use bedrock_model_id if provided, otherwise use the converted model_id
+        if self.bedrock_model_id:
+            model_id = self.bedrock_model_id
+        else:
+            # Use inference profile ID if available for on-demand throughput
+            model_id = get_inference_profile_id(model_id)
+        
         messages = self._get_messages_from_request(request)
 
         return {
-            "modelId": self.bedrock_model_id or model_id,
+            "modelId": model_id,
             "inferenceConfig": {
                 "temperature": request.temperature,
                 "maxTokens": request.max_tokens,
