@@ -324,6 +324,14 @@ models:
     release_date: 2025-12-02
     tags: [NOVA_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG]
 
+  - name: amazon/nova-2-sonic-v1:0
+    display_name: Amazon Nova 2 Sonic
+    description: Amazon Nova 2 Sonic is a lightweight reasoning model that delivers fast response times for quick everyday tasks and applications requiring low latency.
+    creator_organization_name: Amazon
+    access: limited
+    release_date: 2025-12-02
+    tags: [NOVA_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG]
+
   # Titan Models
   # References for Amazon Titan models:
   # - https://aws.amazon.com/bedrock/titan/
@@ -389,6 +397,38 @@ models:
     release_date: 2024-07-24
     tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, ABLATION_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
+  - name: mistralai/magistral-small-2509
+    display_name: Magistral Small (2509) on Amazon Bedrock
+    description: Magistral Small is a compact and efficient model optimized for production workloads requiring fast inference with strong performance.
+    creator_organization_name: Mistral
+    access: limited
+    release_date: 2025-09-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: mistralai/ministral-3-14b-instruct
+    display_name: Ministral 3 14B Instruct on Amazon Bedrock
+    description: Ministral 3 14B is a mid-sized instruction-following model balancing performance and efficiency for a wide range of tasks.
+    creator_organization_name: Mistral
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: mistralai/ministral-3-8b-instruct
+    display_name: Ministral 3 8B Instruct on Amazon Bedrock
+    description: Ministral 3 8B is a compact instruction-following model optimized for cost-effective deployments with strong performance.
+    creator_organization_name: Mistral
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: mistralai/mistral-large-3-675b-instruct
+    display_name: Mistral Large 3 675B Instruct on Amazon Bedrock
+    description: Mistral Large 3 675B is an extremely large and powerful model designed for the most demanding enterprise AI workloads with exceptional reasoning capabilities.
+    creator_organization_name: Mistral
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
 # Llama3 on Amazon Bedrock
 # References for Llama3 on Amazon Bedrock
 # https://aws.amazon.com/bedrock/llama/
@@ -432,6 +472,70 @@ models:
     access: limited
     release_date: 2024-07-26
     tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, ABLATION_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+# Qwen Models on Amazon Bedrock
+
+  - name: qwen/qwen3-next-80b-a3b
+    display_name: Qwen3 Next 80B A3B on Amazon Bedrock
+    description: Qwen3 Next 80B A3B is an advanced large language model from the Qwen family optimized for complex reasoning and multilingual tasks.
+    creator_organization_name: Qwen
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+# Google Gemma Models on Amazon Bedrock
+
+  - name: google/gemma-3-4b-it
+    display_name: Gemma 3 4B Instruct on Amazon Bedrock
+    description: Gemma 3 4B is a compact instruction-tuned model from Google's Gemma family, optimized for efficient deployment and strong performance on various language tasks.
+    creator_organization_name: Google
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: google/gemma-3-12b-it
+    display_name: Gemma 3 12B Instruct on Amazon Bedrock
+    description: Gemma 3 12B is a mid-sized instruction-tuned model from Google's Gemma family, providing strong performance across a wide range of language tasks.
+    creator_organization_name: Google
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: google/gemma-3-27b-it
+    display_name: Gemma 3 27B Instruct on Amazon Bedrock
+    description: Gemma 3 27B is a large instruction-tuned model from Google's Gemma family, offering advanced capabilities for complex language understanding and generation tasks.
+    creator_organization_name: Google
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+# Moonshot Models on Amazon Bedrock
+
+  - name: moonshot/kimi-k2-thinking
+    display_name: Kimi K2 Thinking on Amazon Bedrock
+    description: Kimi K2 Thinking is an advanced reasoning model from Moonshot AI designed for complex problem-solving and analytical tasks.
+    creator_organization_name: Moonshot
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+# Nvidia Models on Amazon Bedrock
+
+  - name: nvidia/nemotron-nano-9b-v2
+    display_name: Nemotron Nano 9B v2 on Amazon Bedrock
+    description: Nemotron Nano 9B v2 is a compact and efficient language model from Nvidia, optimized for edge deployment and fast inference.
+    creator_organization_name: Nvidia
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
+
+  - name: nvidia/nemotron-nano-12b-v2
+    display_name: Nemotron Nano 12B v2 on Amazon Bedrock
+    description: Nemotron Nano 12B v2 is a mid-sized language model from Nvidia, providing strong performance with efficient resource utilization.
+    creator_organization_name: Nvidia
+    access: limited
+    release_date: 2025-01-01
+    tags: [BEDROCK_MODEL_TAG, TEXT_MODEL_TAG, LIMITED_FUNCTIONALITY_TEXT_MODEL_TAG, INSTRUCTION_FOLLOWING_MODEL_TAG]
 
   # Anthropic
   - name: anthropic/claude-v1.3

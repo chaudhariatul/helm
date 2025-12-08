@@ -1,0 +1,197 @@
+{
+  "comment": "Model Pricing Information - All prices are in USD per 1 million tokens unless otherwise specified. Last updated: December 2024",
+  "models": [
+    {
+      "model_name": "amazon/nova-premier-v1:0",
+      "input_price_per_million": 2.50,
+      "output_price_per_million": 12.50,
+      "notes": "Most capable Nova model for complex tasks"
+    },
+    {
+      "model_name": "amazon/nova-pro-v1:0",
+      "input_price_per_million": 0.80,
+      "output_price_per_million": 3.20,
+      "notes": "Balanced accuracy, speed, and cost"
+    },
+    {
+      "model_name": "amazon/nova-lite-v1:0",
+      "input_price_per_million": 0.06,
+      "output_price_per_million": 0.24,
+      "notes": "Low-cost multimodal model"
+    },
+    {
+      "model_name": "amazon/nova-micro-v1:0",
+      "input_price_per_million": 0.035,
+      "output_price_per_million": 0.14,
+      "notes": "Text-only model with low latency"
+    },
+    {
+      "model_name": "amazon/nova-2-pro-v1:0",
+      "input_price_per_million": 1.20,
+      "output_price_per_million": 4.80,
+      "notes": "Advanced reasoning model for complex tasks"
+    },
+    {
+      "model_name": "amazon/nova-2-lite-v1:0",
+      "input_price_per_million": 0.10,
+      "output_price_per_million": 0.40,
+      "notes": "Fast, cost-effective reasoning model"
+    },
+    {
+      "model_name": "amazon/nova-2-sonic-v1:0",
+      "input_price_per_million": 0.045,
+      "output_price_per_million": 0.18,
+      "notes": "Lightweight reasoning model with fast response"
+    },
+    {
+      "model_name": "amazon/titan-text-lite-v1",
+      "input_price_per_million": 0.15,
+      "output_price_per_million": 0.20,
+      "notes": "Lightweight Titan model"
+    },
+    {
+      "model_name": "amazon/titan-text-express-v1",
+      "input_price_per_million": 0.20,
+      "output_price_per_million": 0.60,
+      "notes": "Express Titan model"
+    },
+    {
+      "model_name": "mistralai/amazon-mistral-7b-instruct-v0:2",
+      "input_price_per_million": 0.15,
+      "output_price_per_million": 0.20,
+      "notes": "Mistral 7B on Bedrock"
+    },
+    {
+      "model_name": "openai/gpt-4o",
+      "input_price_per_million": 2.50,
+      "output_price_per_million": 10.00,
+      "notes": "GPT-4 Optimized"
+    },
+    {
+      "model_name": "openai/gpt-4o-mini",
+      "input_price_per_million": 0.15,
+      "output_price_per_million": 0.60,
+      "notes": "Smaller, faster GPT-4 variant"
+    },
+    {
+      "model_name": "openai/gpt-4-turbo",
+      "input_price_per_million": 10.00,
+      "output_price_per_million": 30.00,
+      "notes": "GPT-4 Turbo with 128K context"
+    },
+    {
+      "model_name": "openai/gpt-4",
+      "input_price_per_million": 30.00,
+      "output_price_per_million": 60.00,
+      "notes": "GPT-4 8K context"
+    },
+    {
+      "model_name": "openai/gpt-3.5-turbo",
+      "input_price_per_million": 0.50,
+      "output_price_per_million": 1.50,
+      "notes": "GPT-3.5 Turbo"
+    },
+    {
+      "model_name": "openai/o1",
+      "input_price_per_million": 15.00,
+      "output_price_per_million": 60.00,
+      "notes": "Reasoning model"
+    },
+    {
+      "model_name": "openai/o1-mini",
+      "input_price_per_million": 3.00,
+      "output_price_per_million": 12.00,
+      "notes": "Smaller reasoning model"
+    },
+    {
+      "model_name": "anthropic/claude-3-opus",
+      "input_price_per_million": 15.00,
+      "output_price_per_million": 75.00,
+      "notes": "Most capable Claude 3 model"
+    },
+    {
+      "model_name": "anthropic/claude-3-sonnet",
+      "input_price_per_million": 3.00,
+      "output_price_per_million": 15.00,
+      "notes": "Balanced Claude 3 model"
+    },
+    {
+      "model_name": "anthropic/claude-3-haiku",
+      "input_price_per_million": 0.25,
+      "output_price_per_million": 1.25,
+      "notes": "Fast and compact Claude 3 model"
+    },
+    {
+      "model_name": "anthropic/claude-3.5-sonnet",
+      "input_price_per_million": 3.00,
+      "output_price_per_million": 15.00,
+      "notes": "Enhanced Claude 3.5 Sonnet"
+    },
+    {
+      "model_name": "anthropic/claude-2.1",
+      "input_price_per_million": 8.00,
+      "output_price_per_million": 24.00,
+      "notes": "Claude 2.1"
+    },
+    {
+      "model_name": "anthropic/claude-2",
+      "input_price_per_million": 8.00,
+      "output_price_per_million": 24.00,
+      "notes": "Claude 2"
+    },
+    {
+      "model_name": "meta/llama3-70b-instruct",
+      "input_price_per_million": 0.99,
+      "output_price_per_million": 0.99,
+      "notes": "Llama 3 70B on Bedrock"
+    },
+    {
+      "model_name": "meta/llama3-8b-instruct",
+      "input_price_per_million": 0.30,
+      "output_price_per_million": 0.60,
+      "notes": "Llama 3 8B on Bedrock"
+    },
+    {
+      "model_name": "cohere/command-r-plus",
+      "input_price_per_million": 3.00,
+      "output_price_per_million": 15.00,
+      "notes": "Cohere Command R Plus"
+    },
+    {
+      "model_name": "cohere/command-r",
+      "input_price_per_million": 0.50,
+      "output_price_per_million": 1.50,
+      "notes": "Cohere Command R"
+    },
+    {
+      "model_name": "ai21/j2-ultra",
+      "input_price_per_million": 15.00,
+      "output_price_per_million": 15.00,
+      "notes": "AI21 Jurassic-2 Ultra"
+    },
+    {
+      "model_name": "ai21/j2-mid",
+      "input_price_per_million": 10.00,
+      "output_price_per_million": 10.00,
+      "notes": "AI21 Jurassic-2 Mid"
+    },
+    {
+      "model_name": "google/gemini-1.5-pro",
+      "input_price_per_million": 1.25,
+      "output_price_per_million": 5.00,
+      "notes": "Gemini 1.5 Pro"
+    },
+    {
+      "model_name": "google/gemini-1.5-flash",
+      "input_price_per_million": 0.075,
+      "output_price_per_million": 0.30,
+      "notes": "Gemini 1.5 Flash"
+    },
+    {
+      "model_name": "google/gemini-pro",
+      "input_price_per_million": 0.50,
+      "output_price_per_million": 1.50,
+      "notes": "Gemini Pro"
+    }
+  ]
+}

@@ -552,6 +552,31 @@ model_deployments:
     client_spec:
       class_name: "helm.clients.bedrock_client.BedrockNovaClient"
 
+  - name: amazon/nova-2-pro-v1:0
+    model_name: amazon/nova-2-pro-v1:0
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 1000000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: amazon/nova-2-lite-v1:0
+    model_name: amazon/nova-2-lite-v1:0
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 1000000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+      args:
+        bedrock_model_id: us.amazon.nova-2-lite-v1:0
+
+  - name: amazon/nova-2-sonic-v1:0
+    model_name: amazon/nova-2-sonic-v1:0
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 300000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+      args:
+        bedrock_model_id: us.amazon.nova-2-sonic-v1:0
+
   # Titan on Amazon Bedrock
 
   - name: amazon/titan-text-lite-v1
@@ -605,6 +630,34 @@ model_deployments:
     client_spec:
       class_name: "helm.clients.bedrock_client.BedrockMistralClient"
 
+  - name: mistralai/magistral-small-2509
+    model_name: mistralai/magistral-small-2509
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: mistralai/ministral-3-14b-instruct
+    model_name: mistralai/ministral-3-14b-instruct
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: mistralai/ministral-3-8b-instruct
+    model_name: mistralai/ministral-3-8b-instruct
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: mistralai/mistral-large-3-675b-instruct
+    model_name: mistralai/mistral-large-3-675b-instruct
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
   # Llama 3 on Amazon Bedrock
   
   - name: amazon/llama3-8b-instruct-v1:0
@@ -642,6 +695,63 @@ model_deployments:
     max_sequence_length: 2000
     client_spec:
       class_name: "helm.clients.bedrock_client.BedrockLlamaClient"
+
+  # Qwen Models on Amazon Bedrock
+
+  - name: qwen/qwen3-next-80b-a3b
+    model_name: qwen/qwen3-next-80b-a3b
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 32000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  # Google Gemma Models on Amazon Bedrock
+
+  - name: google/gemma-3-4b-it
+    model_name: google/gemma-3-4b-it
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: google/gemma-3-12b-it
+    model_name: google/gemma-3-12b-it
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: google/gemma-3-27b-it
+    model_name: google/gemma-3-27b-it
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 8000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  # Moonshot Models on Amazon Bedrock
+
+  - name: moonshot/kimi-k2-thinking
+    model_name: moonshot/kimi-k2-thinking
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 128000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  # Nvidia Models on Amazon Bedrock
+
+  - name: nvidia/nemotron-nano-9b-v2
+    model_name: nvidia/nemotron-nano-9b-v2
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 4000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+
+  - name: nvidia/nemotron-nano-12b-v2
+    model_name: nvidia/nemotron-nano-12b-v2
+    tokenizer_name: huggingface/gpt2
+    max_sequence_length: 4000
+    client_spec:
+      class_name: "helm.clients.bedrock_client.BedrockNovaClient"
 
   # Anthropic
   - name: anthropic/claude-v1.3
