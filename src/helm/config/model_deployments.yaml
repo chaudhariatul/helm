@@ -558,6 +558,8 @@ model_deployments:
     max_sequence_length: 1000000
     client_spec:
       class_name: "helm.clients.bedrock_client.BedrockNovaClient"
+      args:
+        bedrock_model_id: us.amazon.nova-2-pro-v1:0
 
   - name: amazon/nova-2-lite-v1:0
     model_name: amazon/nova-2-lite-v1:0
